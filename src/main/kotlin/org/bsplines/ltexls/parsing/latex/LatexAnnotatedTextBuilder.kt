@@ -31,7 +31,6 @@ class LatexAnnotatedTextBuilder(
   private var ignoreEnvironmentEndRegex: Regex? = null
   private var modeStack: ArrayDeque<Mode> = ArrayDeque(listOf(Mode.ParagraphText))
   private var curMode: Mode = Mode.ParagraphText
-  private val tableEnvironmentStack: ArrayDeque<String> = ArrayDeque()
 
   private val commandSignatures: MutableList<LatexCommandSignature> =
     ArrayList(LatexAnnotatedTextBuilderDefaults.DEFAULT_LATEX_COMMAND_SIGNATURES)
@@ -262,7 +261,7 @@ class LatexAnnotatedTextBuilder(
                 Regex("^\\\\stop" + Regex.escape(environmentName) + "(?![A-Za-z])")
               }
           } else if (matchingEnvironmentSignature.action == LatexCommandSignature.Action.Table) {
-            this.tableEnvironmentStack.addLast(environmentName)
+            this.modeStack.add(Mode.TableEnvironment)
           }
 
           if (matchingEnvironmentSignature.ignoreAllArguments) {
@@ -276,9 +275,6 @@ class LatexAnnotatedTextBuilder(
           this.modeStack.addLast(this.curMode)
         }
       } else {
-        if (this.tableEnvironmentStack.lastOrNull() == environmentName) {
-          this.tableEnvironmentStack.removeLastOrNull()
-        }
         addMarkup(command)
         popMode()
       }
@@ -501,7 +497,7 @@ class LatexAnnotatedTextBuilder(
             addMarkup(match, generateDummy(matchingCommandSignature.dummyGenerator))
           }
 
-          else -> {
+          LatexCommandSignature.Action.Table -> {
             addMarkup(match)
           }
         }
@@ -651,7 +647,7 @@ class LatexAnnotatedTextBuilder(
 
     if (isTextMode(this.curMode)) {
       when {
-        this.curChar == '&' && this.tableEnvironmentStack.isNotEmpty() -> {
+        this.curChar == '&' && this.modeStack.lastOrNull() == Mode.TableEnvironment -> {
           addMarkup(whitespace, "\n\n")
         }
 
@@ -681,7 +677,7 @@ class LatexAnnotatedTextBuilder(
       addMarkup(whitespace)
     }
 
-    if ((this.curChar == '~') || (this.curChar == '&' && this.tableEnvironmentStack.isEmpty())) {
+    if ((this.curChar == '~') || (this.curChar == '&' && this.modeStack.lastOrNull() != Mode.TableEnvironment)) {
       this.dummyLastSpace = " "
     }
   }
@@ -966,6 +962,7 @@ class LatexAnnotatedTextBuilder(
     DisplayMath,
     IgnoreEnvironment,
     Rsweave,
+    TableEnvironment
   }
 
   companion object {
