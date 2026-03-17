@@ -88,12 +88,11 @@ class LatexAnnotatedTextBuilder(
 
     for ((key, actionString) in settings.latexEnvironments) {
       val action: LatexCommandSignature.Action =
-        if (actionString == "default") {
-          LatexCommandSignature.Action.Default
-        } else if (actionString == "ignore") {
-          LatexCommandSignature.Action.Ignore
-        } else {
-          continue
+        when (actionString) {
+          "default" -> LatexCommandSignature.Action.Default
+          "ignore" -> LatexCommandSignature.Action.Ignore
+          "itemize" -> LatexCommandSignature.Action.Itemize
+          else -> continue
         }
 
       this.environmentSignatures.add(LatexEnvironmentSignature(key, action))
@@ -261,6 +260,8 @@ class LatexAnnotatedTextBuilder(
               } else {
                 Regex("^\\\\stop" + Regex.escape(environmentName) + "(?![A-Za-z])")
               }
+          } else if (matchingEnvironmentSignature.action == LatexCommandSignature.Action.Itemize) {
+            this.modeStack.addLast(Mode.Itemize)
           }
 
           if (matchingEnvironmentSignature.ignoreAllArguments) {
@@ -461,6 +462,8 @@ class LatexAnnotatedTextBuilder(
       if (headingArgument.isNotEmpty()) addMarkup(headingArgument)
       this.modeStack.addLast(Mode.Heading)
       addMarkup("{")
+    } else if (command == "\\item") {
+      addMarkup(command,"\n\n")
     } else if ((command == "\\text") || (command == "\\intertext")) {
       this.modeStack.addLast(Mode.InlineText)
       val interpretAs: String = if (isMathMode(this.curMode)) generateDummy() else ""
@@ -949,6 +952,7 @@ class LatexAnnotatedTextBuilder(
     ParagraphText,
     InlineText,
     Heading,
+    Itemize,
     InlineMath,
     DisplayMath,
     IgnoreEnvironment,

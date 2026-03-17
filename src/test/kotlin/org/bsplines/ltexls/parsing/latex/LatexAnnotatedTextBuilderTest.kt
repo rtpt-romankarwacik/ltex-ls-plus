@@ -30,7 +30,7 @@ class LatexAnnotatedTextBuilderTest : CodeAnnotatedTextBuilderTest("latex") {
       \end{itemize}
 
       """.trimIndent(),
-      "We can do this or that. ",
+      "We can do \n\nthis or \n\nthat. ",
     )
     assertPlainText(
       """
@@ -617,5 +617,112 @@ class LatexAnnotatedTextBuilderTest : CodeAnnotatedTextBuilderTest("latex") {
         true,
       )
     assertTrue(plainStartPos < plainEndPos)
+  }
+
+  @Test
+  fun testItemizeEnvironment() {
+    // Each \item should be treated as a separate sentence
+    assertPlainText(
+      """
+      \begin{itemize}
+        \item First bullet point.
+        \item Second bullet point.
+        \item Third bullet point.
+      \end{itemize}
+      
+      """.trimIndent(),
+      " \n\nFirst bullet point. \n\nSecond bullet point. \n\nThird bullet point. ",
+    )
+  }
+
+  @Test
+  fun testEnumerateEnvironment() {
+    // Each \item in enumerate should also be treated as a separate sentence
+    assertPlainText(
+      """
+      \begin{enumerate}
+        \item First step.
+        \item Second step.
+        \item Third step.
+      \end{enumerate}
+      
+      """.trimIndent(),
+      " \n\nFirst step. \n\nSecond step. \n\nThird step. ",
+    )
+  }
+
+  @Test
+  fun testDescriptionEnvironment() {
+    // Each \item in description should also be treated as a separate sentence
+    assertPlainText(
+      """
+      \begin{description}
+        \item[Term 1] Definition of term 1.
+        \item[Term 2] Definition of term 2.
+        \item[Term 3] Definition of term 3.
+      \end{description}
+      
+      """.trimIndent(),
+      " \n\n[Term 1] Definition of term 1. \n\n[Term 2] Definition of term 2. \n\n[Term 3] Definition of term 3. ",
+    )
+  }
+
+  @Test
+  fun testNestedListEnvironments() {
+    // Nested lists should also work correctly
+    assertPlainText(
+      """
+      \begin{enumerate}
+        \item Outer item 1.
+          \begin{itemize}
+            \item Inner item 1.
+            \item Inner item 2.
+          \end{itemize}
+        \item Outer item 2.
+      \end{enumerate}
+      
+      """.trimIndent(),
+       " \n\nOuter item 1. \n\nInner item 1. \n\nInner item 2. \n\nOuter item 2. ",
+    )
+  }
+
+  @Test
+  fun testMixedContentWithLists() {
+    // Test mixing regular text with list environments
+    assertPlainText(
+      """
+      This is introductory text.
+      
+      \begin{itemize}
+        \item First list item.
+        \item Second list item.
+      \end{itemize}
+      
+      This is concluding text.
+      
+      """.trimIndent(),
+      "This is introductory text.\n\n\n\nFirst list item. \n\nSecond list item. \n\nThis is concluding text. ",
+    )
+  }
+
+  @Test
+  fun testItemizeItemsAsSentenceBoundaries() {
+    // Verify that items without periods are still treated as separate sentences
+    // This is the key behavior: each \item creates a sentence boundary
+    assertPlainText(
+      """
+      Start text.
+      
+      \begin{itemize}
+        \item Item one
+        \item Item two
+        \item Item three
+      \end{itemize}
+      
+      End text.
+      
+      """.trimIndent(),
+      "Start text.\n\n\n\nItem one \n\nItem two \n\nItem three \n\nEnd text. ",
+    )
   }
 }

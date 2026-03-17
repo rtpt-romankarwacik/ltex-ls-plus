@@ -19,6 +19,7 @@ object LatexAnnotatedTextBuilderDefaults {
           LatexCommandSignature("\\@addtoreset{}{}"),
           LatexCommandSignature("\\@ifpackageloaded{}"),
           LatexCommandSignature("\\@setplength{}{}"),
+          LatexCommandSignature("\\item[]"),
           LatexCommandSignature("\\Ac{}", LatexCommandSignature.Action.Dummy),
           LatexCommandSignature("\\Ac[]{}", LatexCommandSignature.Action.Dummy),
           LatexCommandSignature("\\Ac*{}", LatexCommandSignature.Action.Dummy),
@@ -1087,6 +1088,9 @@ object LatexAnnotatedTextBuilderDefaults {
           LatexEnvironmentSignature("textpos*"),
           LatexEnvironmentSignature("tikzpicture"),
           LatexEnvironmentSignature("verbatim"),
+          LatexEnvironmentSignature("itemize", LatexCommandSignature.Action.Itemize),
+          LatexEnvironmentSignature("enumerate", LatexCommandSignature.Action.Itemize),
+          LatexEnvironmentSignature("description", LatexCommandSignature.Action.Itemize),
         )
 
       val babelLanguageMap: Map<String, String> = LatexFragmentizer.BABEL_LANGUAGE_MAP
