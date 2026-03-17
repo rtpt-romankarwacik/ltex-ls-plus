@@ -1087,6 +1087,46 @@ object LatexAnnotatedTextBuilderDefaults {
           LatexEnvironmentSignature("textpos*"),
           LatexEnvironmentSignature("tikzpicture"),
           LatexEnvironmentSignature("verbatim"),
+          LatexEnvironmentSignature(
+            "\\begin{longtable}{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{longtable}[]{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabu}{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabu}[]{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabular}{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabular}[]{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabular*}{}{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabular*}{}[]{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabularx}{}{}",
+            LatexCommandSignature.Action.Table,
+          ),
+          LatexEnvironmentSignature(
+            "\\begin{tabularx}{}[]{}",
+            LatexCommandSignature.Action.Table,
+          ),
         )
 
       val babelLanguageMap: Map<String, String> = LatexFragmentizer.BABEL_LANGUAGE_MAP

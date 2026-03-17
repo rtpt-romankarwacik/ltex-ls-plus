@@ -31,6 +31,7 @@ class LatexAnnotatedTextBuilder(
   private var ignoreEnvironmentEndRegex: Regex? = null
   private var modeStack: ArrayDeque<Mode> = ArrayDeque(listOf(Mode.ParagraphText))
   private var curMode: Mode = Mode.ParagraphText
+  private val tableEnvironmentStack: ArrayDeque<String> = ArrayDeque()
 
   private val commandSignatures: MutableList<LatexCommandSignature> =
     ArrayList(LatexAnnotatedTextBuilderDefaults.DEFAULT_LATEX_COMMAND_SIGNATURES)
@@ -88,12 +89,11 @@ class LatexAnnotatedTextBuilder(
 
     for ((key, actionString) in settings.latexEnvironments) {
       val action: LatexCommandSignature.Action =
-        if (actionString == "default") {
-          LatexCommandSignature.Action.Default
-        } else if (actionString == "ignore") {
-          LatexCommandSignature.Action.Ignore
-        } else {
-          continue
+        when (actionString) {
+          "default" -> LatexCommandSignature.Action.Default
+          "ignore" -> LatexCommandSignature.Action.Ignore
+          "table" -> LatexCommandSignature.Action.Table
+          else -> continue
         }
 
       this.environmentSignatures.add(LatexEnvironmentSignature(key, action))
@@ -261,6 +261,8 @@ class LatexAnnotatedTextBuilder(
               } else {
                 Regex("^\\\\stop" + Regex.escape(environmentName) + "(?![A-Za-z])")
               }
+          } else if (matchingEnvironmentSignature.action == LatexCommandSignature.Action.Table) {
+            this.tableEnvironmentStack.addLast(environmentName)
           }
 
           if (matchingEnvironmentSignature.ignoreAllArguments) {
@@ -274,6 +276,9 @@ class LatexAnnotatedTextBuilder(
           this.modeStack.addLast(this.curMode)
         }
       } else {
+        if (this.tableEnvironmentStack.lastOrNull() == environmentName) {
+          this.tableEnvironmentStack.removeLastOrNull()
+        }
         addMarkup(command)
         popMode()
       }
@@ -495,6 +500,10 @@ class LatexAnnotatedTextBuilder(
           LatexCommandSignature.Action.Dummy -> {
             addMarkup(match, generateDummy(matchingCommandSignature.dummyGenerator))
           }
+
+          else -> {
+            addMarkup(match)
+          }
         }
       } else {
         if (isMathMode(curMode) && (this.mathVowelState == MathVowelState.Undecided)) {
@@ -642,6 +651,10 @@ class LatexAnnotatedTextBuilder(
 
     if (isTextMode(this.curMode)) {
       when {
+        this.curChar == '&' && this.tableEnvironmentStack.isNotEmpty() -> {
+          addMarkup(whitespace, "\n\n")
+        }
+
         // Prefer text to avoid switching between text and markup too often
         // TODO What about \r\n?
         this.lastSpace.isEmpty() && (whitespace == " " || whitespace == "\n") -> {
@@ -668,7 +681,7 @@ class LatexAnnotatedTextBuilder(
       addMarkup(whitespace)
     }
 
-    if ((this.curChar == '~') || (this.curChar == '&')) {
+    if ((this.curChar == '~') || (this.curChar == '&' && this.tableEnvironmentStack.isEmpty())) {
       this.dummyLastSpace = " "
     }
   }

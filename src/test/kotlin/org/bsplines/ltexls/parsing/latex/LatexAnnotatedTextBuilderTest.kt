@@ -277,6 +277,47 @@ class LatexAnnotatedTextBuilderTest : CodeAnnotatedTextBuilderTest("latex") {
   }
 
   @Test
+  fun testTableMode() {
+    assertPlainText(
+      "\\begin{tabular}{ll}\nFirst & Second\n\\end{tabular}\n",
+      " First \n\nSecond ",
+    )
+    assertPlainText(
+      "\\begin{tabular}{lll}\nA & B & C \\\\\nD & E & F\n\\end{tabular}\n",
+      " A \n\nB \n\nC D \n\nE \n\nF ",
+    )
+    assertPlainText(
+      "\\begin{tabular*}{10cm}{ll}\nX & Y\n\\end{tabular*}\n",
+      " X \n\nY ",
+    )
+    assertPlainText(
+      "\\begin{tabularx}{10cm}{ll}\nP & Q\n\\end{tabularx}\n",
+      " P \n\nQ ",
+    )
+    assertPlainText(
+      "\\begin{longtable}{ll}\nM & N\n\\end{longtable}\n",
+      " M \n\nN ",
+    )
+    assertPlainText(
+      "\\begin{tabu}{ll}\nR & S\n\\end{tabu}\n",
+      " R \n\nS ",
+    )
+    assertPlainText(
+      "\\begin{tabular}[t]{ll}\nU & V\n\\end{tabular}\n",
+      " U \n\nV ",
+    )
+    assertPlainText(
+      "\\begin{mytable}{ll}\nG & H\n\\end{mytable}\n",
+      " G \n\nH ",
+      Settings(_latexEnvironments = mapOf(Pair("\\begin{mytable}{}", "table"))),
+    )
+    assertPlainText(
+      "This is a &test.\n",
+      "This is a test. ",
+    )
+  }
+
+  @Test
   fun testTikzMode() {
     assertPlainText("This is a \\tikzset{bla}test.\n", "This is a test. ")
     assertPlainText(

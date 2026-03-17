@@ -109,6 +109,7 @@ open class LatexCommandSignature(
     Default,
     Ignore,
     Dummy,
+    Table,
   }
 
   companion object {
