@@ -20,6 +20,7 @@ open class LatexCommandSignature(
 ) {
   var prefix = ""
   val argumentTypes: List<ArgumentType>
+  val argumentActions: List<Action>
   private var commandRegex: Regex
 
   init {
@@ -29,6 +30,7 @@ open class LatexCommandSignature(
     if (commandMatchGroup != null) {
       this.prefix = commandMatchGroup.value
       val argumentTypes = ArrayList<ArgumentType>()
+      val argumentActions = ArrayList<Action>()
       var pos: Int = commandMatchGroup.range.last + 1
 
       while (true) {
@@ -43,18 +45,32 @@ open class LatexCommandSignature(
             else -> ArgumentType.Brace
           }
 
+        // Parse per-argument action if the argument content is an action keyword
+        val argumentContent = argumentMatchResult.value.substring(1, argumentMatchResult.value.length - 1)
+        val argAction: Action =
+          when (argumentContent.lowercase()) {
+            "default" -> Action.Default
+            "ignore" -> Action.Ignore
+            "dummy" -> Action.Dummy
+            "pluraldummy" -> Action.Dummy
+            "voweldummy" -> Action.Dummy
+            else -> this.action
+          }
+
         argumentTypes.add(argumentType)
-        pos += argumentMatchResult.value.length
-        assert(argumentMatchResult.value.isNotEmpty())
+        argumentActions.add(argAction)
+        pos = pos + argumentMatchResult.value.length
       }
 
       this.argumentTypes = argumentTypes
+      this.argumentActions = argumentActions
       val regexString: String =
         "^" + (if (escapeCommandPrefix) Regex.escape(this.prefix) else this.prefix)
       this.commandRegex = Regex(regexString)
     } else {
       Logging.LOGGER.warning(I18n.format("invalidCommandPrototype", commandPrototype))
       this.argumentTypes = ArrayList()
+      this.argumentActions = ArrayList()
       @Suppress("RegExpUnexpectedAnchor")
       this.commandRegex = Regex(" ^$")
     }
@@ -67,6 +83,14 @@ open class LatexCommandSignature(
     val arguments = ArrayList<Pair<Int, Int>>()
     val toPos: Int = matchFromPosition(code, fromPos, arguments)
     return if (toPos > -1) arguments else null
+  }
+
+  fun getArgumentAction(argumentIndex: Int): Action {
+    return if (argumentIndex >= 0 && argumentIndex < this.argumentActions.size) {
+      this.argumentActions[argumentIndex]
+    } else {
+      this.action
+    }
   }
 
   fun matchFromPosition(

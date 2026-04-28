@@ -487,13 +487,19 @@ class LatexAnnotatedTextBuilder(
         (matchingCommandSignature != null) &&
         (matchingCommandSignature.action != LatexCommandSignature.Action.Default)
       ) {
-        when (matchingCommandSignature.action) {
-          LatexCommandSignature.Action.Ignore -> {
-            addMarkup(match)
-          }
+        if (hasPerArgumentActions(matchingCommandSignature)) {
+          // Handle per-argument actions
+          processCommandWithPerArgumentActions(matchingCommandSignature)
+        } else {
+          // Handle command-level actions (backward compatibility)
+          when (matchingCommandSignature.action) {
+            LatexCommandSignature.Action.Ignore -> {
+              addMarkup(match)
+            }
 
-          LatexCommandSignature.Action.Dummy -> {
-            addMarkup(match, generateDummy(matchingCommandSignature.dummyGenerator))
+            LatexCommandSignature.Action.Dummy -> {
+              addMarkup(match, generateDummy(matchingCommandSignature.dummyGenerator))
+            }
           }
         }
       } else {
@@ -936,6 +942,63 @@ class LatexAnnotatedTextBuilder(
       }
 
       break
+    }
+  }
+
+  private fun hasPerArgumentActions(commandSignature: LatexCommandSignature): Boolean {
+    // Check if any argument has a specific action different from the command's default action
+    for (argAction in commandSignature.argumentActions) {
+      if (argAction != LatexCommandSignature.Action.Default) {
+        return true
+      }
+    }
+    return false
+  }
+
+  private fun processCommandWithPerArgumentActions(
+    commandSignature: LatexCommandSignature,
+  ) {
+    var curPos = this.pos
+
+    // Add command prefix as markup
+    addMarkup(commandSignature.prefix)
+    curPos += commandSignature.prefix.length
+
+    // Process each argument according to its specific action
+    for (argumentIndex in 0 until commandSignature.argumentTypes.size) {
+      val argumentType = commandSignature.argumentTypes[argumentIndex]
+      val argumentAction = commandSignature.getArgumentAction(argumentIndex)
+
+      val argument = LatexCommandSignature.matchArgumentFromPosition(
+        this.code,
+        curPos,
+        argumentType,
+      )
+
+      if (argument.isEmpty()) break
+
+      when (argumentAction) {
+        LatexCommandSignature.Action.Ignore -> {
+          addMarkup(argument)
+        }
+
+        LatexCommandSignature.Action.Dummy -> {
+          addMarkup(argument, generateDummy())
+        }
+
+        LatexCommandSignature.Action.Default -> {
+          // For default action, extract and add the contents as text, and delimiters as markup
+          val openDelimiter = argument[0]
+          val closeDelimiter = argument[argument.length - 1]
+          val contents = argument.substring(1, argument.length - 1)
+          
+          addMarkup(openDelimiter.toString())
+          addText(contents)
+          addMarkup(closeDelimiter.toString())
+        }
+      }
+
+      curPos += argument.length
     }
   }
 

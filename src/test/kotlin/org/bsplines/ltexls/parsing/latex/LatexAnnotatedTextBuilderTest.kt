@@ -259,6 +259,31 @@ class LatexAnnotatedTextBuilderTest : CodeAnnotatedTextBuilderTest("latex") {
       Settings(_latexEnvironments = mapOf(Pair("foobar", "ignore"))),
     )
 
+    // Test per-argument actions (issue: ignore specific arguments while spell-checking others)
+    // Example: \foobar with 4 arguments - ignore 1st, check 2nd, ignore 3rd, check 4th
+    assertPlainText(
+      "This is a test: \\foobar{abc}{def}{ghi}{jkl}.\n",
+      "This is a test:  def jkl. ",
+      Settings(
+        _latexCommands = mapOf(
+          Pair("\\foobar{ignore}{default}{ignore}{default}", "default")
+        ),
+      ),
+    )
+
+    // Test per-argument actions with different argument types (brackets and braces)
+    // \blockcquote[prenote][postnote]{bibkey}[punct]{quote}
+    // with actions: check prenote, check postnote, ignore bibkey, ignore punct, check quote
+    assertPlainText(
+      "This is a test: \\blockcquote[see also][27]{BibKeyHere}[.]{politically productive text}.\n",
+      "This is a test: see also 27 politically productive text. ",
+      Settings(
+        _latexCommands = mapOf(
+          Pair("\\blockcquote[default][default]{ignore}[ignore]{default}", "default")
+        ),
+      ),
+    )
+
     run {
       val annotatedText = buildAnnotatedText("\\cite{Kubota}*{Theorem 3.7}\n")
       val start = annotatedText.getOriginalTextPositionFor(5, false)
